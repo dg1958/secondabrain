@@ -1,0 +1,215 @@
+# Memory Palace Configuration
+# Copy this file to settings.local.yaml and fill in your API keys
+
+# =============================================================================
+# API KEYS AND CREDENTIALS
+# =============================================================================
+
+# Anthropic API for LLM-powered features (query interpretation, synthesis)
+# TODO: ADD YOUR API KEY HERE
+anthropic:
+  api_key: ""  # Get from: https://console.anthropic.com/
+  model: "claude-sonnet-4-20250514"
+  max_tokens: 4096
+  temperature: 0.3
+
+# Fireflies.ai API for transcript sync
+# TODO: ADD YOUR API KEY HERE
+fireflies:
+  api_key: ""  # Get from: https://app.fireflies.ai/integrations
+  # TODO: COMPLETE OAUTH SETUP - Follow instructions at:
+  # https://docs.fireflies.ai/api-reference/authentication
+  webhook_secret: ""
+  sync_interval_minutes: 60
+  auto_sync_enabled: false
+
+# =============================================================================
+# EMBEDDING MODEL CONFIGURATION
+# =============================================================================
+
+embeddings:
+  # Model for generating text embeddings
+  model_name: "all-MiniLM-L6-v2"
+  # Device for computation: "cpu", "cuda", or "mps" (Apple Silicon)
+  device: "cpu"
+  # Normalize embeddings to unit length
+  normalize: true
+  # Batch size for embedding generation
+  batch_size: 32
+
+# =============================================================================
+# VECTOR DATABASE CONFIGURATION
+# =============================================================================
+
+vector_db:
+  # Path to ChromaDB storage (relative to project root)
+  persist_directory: "./data/chroma_db"
+  # Collection name for memories
+  collection_name: "memory_palace"
+  # Distance metric: "cosine", "l2", or "ip" (inner product)
+  distance_metric: "cosine"
+  # HNSW index parameters (for performance tuning)
+  hnsw_space: "cosine"
+  hnsw_construction_ef: 200
+  hnsw_search_ef: 100
+  hnsw_m: 16
+
+# =============================================================================
+# CHUNKING CONFIGURATION
+# =============================================================================
+
+chunking:
+  # Target chunk size in tokens
+  target_tokens: 500
+  # Overlap between chunks in tokens
+  overlap_tokens: 50
+  # Minimum chunk size (won't create chunks smaller than this)
+  min_chunk_tokens: 100
+  # Maximum chunk size (hard limit)
+  max_chunk_tokens: 1000
+  # Chunking strategy: "semantic", "fixed", or "paragraph"
+  strategy: "semantic"
+  # Sentence separators for semantic chunking
+  sentence_separators:
+    - "\n\n"
+    - "\n"
+    - ". "
+    - "! "
+    - "? "
+
+# =============================================================================
+# METADATA EXTRACTION CONFIGURATION
+# =============================================================================
+
+metadata:
+  # Named Entity Recognition
+  ner:
+    enabled: true
+    # spaCy model for NER
+    model: "en_core_web_sm"
+    # Entity types to extract
+    entity_types:
+      - "PERSON"
+      - "ORG"
+      - "GPE"
+      - "LOC"
+      - "DATE"
+      - "PRODUCT"
+      - "EVENT"
+
+  # Sentiment Analysis
+  # OPTIONAL: Enable sentiment analysis
+  sentiment:
+    enabled: true
+    # Method: "textblob", "vader", or "llm"
+    method: "vader"
+
+  # Topic Extraction
+  topics:
+    enabled: true
+    # Method: "keywords", "llm", or "both"
+    method: "keywords"
+    # Maximum topics to extract per chunk
+    max_topics: 5
+    # Minimum keyword length
+    min_keyword_length: 3
+
+# =============================================================================
+# INGESTION PIPELINE CONFIGURATION
+# =============================================================================
+
+ingestion:
+  # Watch folder for automatic ingestion
+  watch_folder: "./data/raw"
+  # Processed files destination
+  processed_folder: "./data/processed"
+  # File patterns to watch
+  watch_patterns:
+    - "*.txt"
+    - "*.md"
+    - "*.json"
+  # Polling interval for watch folder (seconds)
+  watch_interval_seconds: 30
+  # Enable automatic file watching
+  watch_enabled: false
+  # Move or copy processed files
+  move_processed: true
+  # Enable deduplication
+  deduplication_enabled: true
+  # Similarity threshold for deduplication (0-1)
+  deduplication_threshold: 0.95
+
+# =============================================================================
+# QUERY ENGINE CONFIGURATION
+# =============================================================================
+
+query:
+  # Default number of results to return
+  default_top_k: 10
+  # Maximum results allowed
+  max_top_k: 100
+  # Enable LLM-powered query interpretation
+  llm_interpretation_enabled: true
+  # Enable result synthesis
+  synthesis_enabled: true
+  # Maximum chunks to include in synthesis
+  max_synthesis_chunks: 20
+  # Enable query caching
+  cache_enabled: true
+  # Cache TTL in seconds
+  cache_ttl_seconds: 3600
+
+# =============================================================================
+# API SERVER CONFIGURATION
+# =============================================================================
+
+api:
+  host: "127.0.0.1"
+  port: 8000
+  # Enable API documentation
+  docs_enabled: true
+  # API key for authentication (leave empty to disable)
+  # TODO: ADD YOUR API KEY HERE for production use
+  api_key: ""
+  # CORS origins (for web clients)
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://127.0.0.1:3000"
+  # Rate limiting
+  rate_limit_enabled: false
+  rate_limit_requests_per_minute: 60
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
+  # Log file path (relative to project root)
+  file: "./logs/memory_palace.log"
+  # Enable JSON logging format
+  json_format: false
+  # Log rotation
+  rotation: "10 MB"
+  retention: "1 week"
+  # Enable request logging for API
+  log_requests: true
+
+# =============================================================================
+# DATA PATHS
+# =============================================================================
+
+paths:
+  # Base data directory
+  data_dir: "./data"
+  # Raw transcript storage
+  raw_dir: "./data/raw"
+  # Processed transcript storage
+  processed_dir: "./data/processed"
+  # Vector database storage
+  db_dir: "./data/chroma_db"
+  # Export directory
+  export_dir: "./data/exports"
+  # Cache directory
+  cache_dir: "./data/cache"
