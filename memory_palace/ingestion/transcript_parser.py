@@ -78,9 +78,16 @@ class TranscriptParser:
     def _is_fireflies_format(self, data: Any) -> bool:
         """Check if JSON data matches Fireflies format."""
         if isinstance(data, dict):
-            # Fireflies typically has these fields
-            fireflies_fields = {"id", "title", "transcript", "participants"}
-            return bool(fireflies_fields & set(data.keys()))
+            # Fireflies typically has these fields - require at least 2 matches
+            # and one of the more specific Fireflies-only fields
+            fireflies_specific = {"sentences", "duration", "meeting_url", "summary", "action_items", "keywords"}
+            fireflies_common = {"id", "title", "participants", "date"}
+
+            has_specific = bool(fireflies_specific & set(data.keys()))
+            common_matches = len(fireflies_common & set(data.keys()))
+
+            # Must have at least one specific field, or multiple common fields
+            return has_specific or common_matches >= 2
         return False
 
     def parse(
@@ -448,6 +455,11 @@ class TranscriptParser:
             if isinstance(participants[0], dict):
                 participants = [p.get("name", str(p)) for p in participants]
 
+        # Handle summary - can be string or dict with "overview" field
+        summary = data.get("summary")
+        if isinstance(summary, dict):
+            summary = summary.get("overview") or summary.get("text") or str(summary)
+
         return FirefliesTranscript(
             id=data.get("id", str(hash(transcript_text))[:16]),
             title=data.get("title", "Untitled Meeting"),
@@ -455,7 +467,7 @@ class TranscriptParser:
             duration_minutes=data.get("duration", 0),
             participants=participants,
             transcript_text=transcript_text,
-            summary=data.get("summary"),
+            summary=summary,
             action_items=data.get("action_items"),
             keywords=data.get("keywords"),
             meeting_url=data.get("meeting_url"),
