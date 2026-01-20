@@ -1,0 +1,40 @@
+# Memory Palace - MCP Server
+# Personal AI memory system with Model Context Protocol support
+
+# MCP SDK
+mcp>=1.0.0
+
+# Vector database
+chromadb>=0.4.0
+
+# Embeddings
+sentence-transformers>=2.2.0
+
+# NLP (optional - for enhanced entity extraction)
+spacy>=3.5.0
+
+# Database
+aiosqlite>=0.19.0
+
+# Data models
+pydantic>=2.0.0
+
+# Configuration
+pyyaml>=6.0
+
+# HTTP server (for Open WebUI, LibreChat SSE mode)
+fastapi>=0.100.0
+uvicorn>=0.23.0
+sse-starlette>=1.6.0
+httpx>=0.24.0
+
+# Utilities
+python-dateutil>=2.8.0
+rich>=13.0.0
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+
+# Note: Install spaCy model separately:
+# python -m spacy download en_core_web_sm

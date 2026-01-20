@@ -1,0 +1,52 @@
+# LibreChat MCP Configuration for Memory Palace
+#
+# Add this configuration to your librechat.yaml file.
+# Location varies by installation method - typically:
+# - Docker: ./librechat.yaml in your docker-compose directory
+# - Node.js: ./librechat.yaml in your LibreChat directory
+#
+# For more information, see:
+# https://www.librechat.ai/docs/configuration/mcp
+
+version: 1.2.8
+
+# MCP Server Configuration
+mcpServers:
+  memory-palace:
+    # ============ Option 1: Stdio transport (recommended) ============
+    # This is the standard MCP transport, most reliable
+    command: "python"
+    args:
+      - "-m"
+      - "memory_palace.scripts.run_stdio"
+    cwd: "/path/to/memory_palace"
+    env:
+      MEMORY_PALACE_DATA: "/path/to/memory_palace/data"
+      MEMORY_PALACE_LOG_LEVEL: "INFO"
+    timeout: 30000  # 30 second timeout for tool calls
+
+    # ============ Option 2: HTTP/SSE transport (alternative) ============
+    # Use this if you're running the server separately
+    # Uncomment below and comment out the stdio config above
+    #
+    # type: "sse"
+    # url: "http://localhost:8765/mcp/sse"
+
+# Optional: Combine with LibreChat's built-in memory
+# Memory Palace handles deep storage, built-in memory handles quick facts
+memory:
+  disabled: false
+  personalize: true
+  tokenLimit: 2000  # Keep short for quick lookups
+  validKeys:
+    - "user_preferences"  # Quick user preferences
+    - "quick_facts"       # Simple facts that don't need full storage
+    - "session_context"   # Current session context
+
+# Model-specific settings (optional)
+# You can configure which models have access to MCP tools
+endpoints:
+  # Example: Only enable MCP for Claude models
+  # anthropic:
+  #   mcpServers:
+  #     - memory-palace

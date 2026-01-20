@@ -1,0 +1,106 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "memory-palace"
+version = "1.0.0"
+description = "Personal AI memory system with MCP (Model Context Protocol) support"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Memory Palace", email = "memory-palace@example.com"}
+]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "memory",
+    "rag",
+    "ai",
+    "llm",
+    "claude",
+    "vector-database",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "mcp>=1.0.0",
+    "chromadb>=0.4.0",
+    "sentence-transformers>=2.2.0",
+    "aiosqlite>=0.19.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "sse-starlette>=1.6.0",
+    "httpx>=0.24.0",
+    "python-dateutil>=2.8.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+nlp = [
+    "spacy>=3.5.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+memory-palace = "memory_palace.scripts.run_stdio:main"
+memory-palace-http = "memory_palace.scripts.run_http:main"
+memory-palace-setup = "memory_palace.scripts.setup_db:main"
+
+[project.urls]
+Homepage = "https://github.com/example/memory-palace"
+Documentation = "https://github.com/example/memory-palace#readme"
+Repository = "https://github.com/example/memory-palace.git"
+Issues = "https://github.com/example/memory-palace/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["memory_palace*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true

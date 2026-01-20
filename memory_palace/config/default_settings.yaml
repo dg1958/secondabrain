@@ -1,0 +1,90 @@
+# Memory Palace Default Configuration
+# Override by setting MEMORY_PALACE_CONFIG environment variable
+
+# Data storage paths
+storage:
+  # Base directory for all data (can be overridden by MEMORY_PALACE_DATA env var)
+  data_dir: "./data"
+  # ChromaDB vector storage
+  vector_db_path: "${data_dir}/chromadb"
+  # SQLite metadata database
+  metadata_db_path: "${data_dir}/metadata.db"
+
+# Vector database settings
+vector_db:
+  # Collection name in ChromaDB
+  collection_name: "memory_palace"
+  # Embedding model (sentence-transformers)
+  embedding_model: "all-MiniLM-L6-v2"
+  # Distance metric: cosine, l2, or ip
+  distance_metric: "cosine"
+
+# Search settings
+search:
+  # Default number of results
+  default_limit: 10
+  # Maximum results allowed
+  max_limit: 100
+  # Minimum relevance score (0.0 to 1.0)
+  min_relevance_score: 0.0
+  # Enable hybrid search (semantic + keyword)
+  hybrid_search: true
+  # Weight for semantic search in hybrid mode (0.0 to 1.0)
+  semantic_weight: 0.7
+
+# Metadata extraction settings
+extraction:
+  # spaCy model for NER
+  spacy_model: "en_core_web_sm"
+  # Entity types to extract
+  entity_types:
+    - PERSON
+    - ORG
+    - GPE
+    - LOCATION
+    - PRODUCT
+    - EVENT
+    - WORK_OF_ART
+    - LAW
+    - DATE
+  # Enable sentiment analysis
+  enable_sentiment: true
+  # Enable automatic topic extraction
+  enable_topics: true
+  # Maximum topics per memory
+  max_topics: 5
+
+# Memory settings
+memory:
+  # Default importance level: low, medium, high, critical
+  default_importance: "medium"
+  # Memory types
+  types:
+    - fact
+    - preference
+    - decision
+    - event
+    - insight
+    - conversation_summary
+    - note
+  # Auto-generate summaries for long content
+  auto_summarize: true
+  # Threshold for auto-summarization (characters)
+  summarize_threshold: 1000
+
+# HTTP server settings (for Open WebUI, LibreChat SSE mode)
+http:
+  host: "127.0.0.1"
+  port: 8765
+  # CORS origins (use ["*"] for development)
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+    - "http://127.0.0.1:3000"
+
+# Logging settings
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  # Log file (optional, set to null to disable)
+  file: null
