@@ -3,10 +3,12 @@ Tests for MCP tools.
 
 These tests verify that the MCP tools work correctly
 with the underlying query engine.
+Uses mock embeddings to avoid loading heavy ML models.
 """
 
 import pytest
 from datetime import datetime, timedelta
+import os
 
 from memory_palace.mcp.schemas import (
     SaveMemoryInput,
@@ -19,25 +21,16 @@ from memory_palace.mcp.schemas import (
     MemoryTypeEnum,
     ImportanceEnum,
 )
-from memory_palace.mcp.tools import (
-    save_memory,
-    search_memories,
-    list_recent,
-    list_topics,
-    list_entities,
-    get_memory_stats,
-    timeline_query,
-)
 from memory_palace.config import reset_settings
-from memory_palace.core.vector_db import reset_vector_db
-from memory_palace.core.metadata_db import reset_metadata_db
-from memory_palace.core.query_engine import reset_query_engine
 
 
 @pytest.fixture(autouse=True)
 def reset_globals():
     """Reset global instances before each test."""
     reset_settings()
+    from memory_palace.core.vector_db import reset_vector_db
+    from memory_palace.core.metadata_db import reset_metadata_db
+    from memory_palace.core.query_engine import reset_query_engine
     reset_vector_db()
     reset_metadata_db()
     reset_query_engine()
@@ -51,7 +44,6 @@ def reset_globals():
 @pytest.fixture
 def temp_data_dir(tmp_path):
     """Create a temporary data directory."""
-    import os
     os.environ["MEMORY_PALACE_DATA"] = str(tmp_path)
     return tmp_path
 
@@ -62,6 +54,7 @@ class TestSaveMemory:
     @pytest.mark.asyncio
     async def test_save_basic_memory(self, temp_data_dir):
         """Test saving a basic memory."""
+        from memory_palace.mcp.tools import save_memory
         input_data = SaveMemoryInput(
             content="Python 3.12 introduced new typing syntax for generics.",
             memory_type=MemoryTypeEnum.FACT,
@@ -76,6 +69,7 @@ class TestSaveMemory:
     @pytest.mark.asyncio
     async def test_save_memory_with_topics(self, temp_data_dir):
         """Test saving a memory with explicit topics."""
+        from memory_palace.mcp.tools import save_memory
         input_data = SaveMemoryInput(
             content="I prefer using dark mode for all code editors.",
             memory_type=MemoryTypeEnum.PREFERENCE,
@@ -91,6 +85,7 @@ class TestSaveMemory:
     @pytest.mark.asyncio
     async def test_save_memory_extracts_entities(self, temp_data_dir):
         """Test that saving memory extracts entities."""
+        from memory_palace.mcp.tools import save_memory
         input_data = SaveMemoryInput(
             content="John Smith from Acme Corporation called about the project.",
             memory_type=MemoryTypeEnum.EVENT,
@@ -108,6 +103,7 @@ class TestSearchMemories:
     @pytest.mark.asyncio
     async def test_search_empty_palace(self, temp_data_dir):
         """Test searching an empty memory palace."""
+        from memory_palace.mcp.tools import search_memories
         input_data = SearchMemoriesInput(query="anything")
 
         result = await search_memories(input_data)
@@ -118,6 +114,7 @@ class TestSearchMemories:
     @pytest.mark.asyncio
     async def test_search_finds_memory(self, temp_data_dir):
         """Test that search finds a saved memory."""
+        from memory_palace.mcp.tools import save_memory, search_memories
         # First save a memory
         await save_memory(SaveMemoryInput(
             content="The quick brown fox jumps over the lazy dog.",
@@ -136,6 +133,7 @@ class TestSearchMemories:
     @pytest.mark.asyncio
     async def test_search_with_type_filter(self, temp_data_dir):
         """Test searching with memory type filter."""
+        from memory_palace.mcp.tools import save_memory, search_memories
         # Save different types
         await save_memory(SaveMemoryInput(
             content="I like coffee in the morning.",
@@ -162,6 +160,7 @@ class TestListRecent:
     @pytest.mark.asyncio
     async def test_list_recent_empty(self, temp_data_dir):
         """Test listing recent memories when empty."""
+        from memory_palace.mcp.tools import list_recent
         result = await list_recent(ListRecentInput(limit=10))
 
         assert result.total_found == 0
@@ -169,6 +168,7 @@ class TestListRecent:
     @pytest.mark.asyncio
     async def test_list_recent_returns_memories(self, temp_data_dir):
         """Test that list_recent returns saved memories."""
+        from memory_palace.mcp.tools import save_memory, list_recent
         # Save some memories
         await save_memory(SaveMemoryInput(content="Memory 1"))
         await save_memory(SaveMemoryInput(content="Memory 2"))
@@ -185,6 +185,7 @@ class TestListTopics:
     @pytest.mark.asyncio
     async def test_list_topics_empty(self, temp_data_dir):
         """Test listing topics when empty."""
+        from memory_palace.mcp.tools import list_topics
         result = await list_topics(ListTopicsInput())
 
         assert result.total_count == 0
@@ -192,6 +193,7 @@ class TestListTopics:
     @pytest.mark.asyncio
     async def test_list_topics_after_save(self, temp_data_dir):
         """Test listing topics after saving with topics."""
+        from memory_palace.mcp.tools import save_memory, list_topics
         await save_memory(SaveMemoryInput(
             content="Python is a great programming language.",
             topics=["python", "programming"],
@@ -208,6 +210,7 @@ class TestListEntities:
     @pytest.mark.asyncio
     async def test_list_entities_empty(self, temp_data_dir):
         """Test listing entities when empty."""
+        from memory_palace.mcp.tools import list_entities
         result = await list_entities(ListEntitiesInput())
 
         assert result.total_count == 0
@@ -219,6 +222,7 @@ class TestGetMemoryStats:
     @pytest.mark.asyncio
     async def test_stats_empty_palace(self, temp_data_dir):
         """Test stats for empty palace."""
+        from memory_palace.mcp.tools import get_memory_stats
         result = await get_memory_stats(GetMemoryStatsInput())
 
         assert result.total_memories == 0
@@ -228,6 +232,7 @@ class TestGetMemoryStats:
     @pytest.mark.asyncio
     async def test_stats_after_save(self, temp_data_dir):
         """Test stats after saving memories."""
+        from memory_palace.mcp.tools import save_memory, get_memory_stats
         await save_memory(SaveMemoryInput(
             content="Test memory",
             memory_type=MemoryTypeEnum.FACT,
@@ -245,6 +250,7 @@ class TestTimelineQuery:
     @pytest.mark.asyncio
     async def test_timeline_empty(self, temp_data_dir):
         """Test timeline query on empty palace."""
+        from memory_palace.mcp.tools import timeline_query
         result = await timeline_query(TimelineQueryInput(
             topic="anything",
         ))
@@ -254,6 +260,7 @@ class TestTimelineQuery:
     @pytest.mark.asyncio
     async def test_timeline_finds_memories(self, temp_data_dir):
         """Test timeline query finds relevant memories."""
+        from memory_palace.mcp.tools import save_memory, timeline_query
         await save_memory(SaveMemoryInput(
             content="Started working on the AI project.",
             topics=["AI", "project"],

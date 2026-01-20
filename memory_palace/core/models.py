@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Optional, Any
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class MemoryType(str, Enum):
@@ -60,6 +60,8 @@ class EntityType(str, Enum):
 
 class Entity(BaseModel):
     """An entity (person, organization, etc.) mentioned in memories."""
+    model_config = ConfigDict(use_enum_values=True)
+
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str
     entity_type: EntityType
@@ -69,9 +71,6 @@ class Entity(BaseModel):
     last_seen: datetime = Field(default_factory=datetime.utcnow)
     memory_count: int = 0
     metadata: dict[str, Any] = Field(default_factory=dict)
-
-    class Config:
-        use_enum_values = True
 
 
 class Topic(BaseModel):
@@ -86,6 +85,8 @@ class Topic(BaseModel):
 
 class Memory(BaseModel):
     """A single memory stored in the palace."""
+    model_config = ConfigDict(use_enum_values=True)
+
     id: str = Field(default_factory=lambda: str(uuid4()))
     content: str
     memory_type: MemoryType = MemoryType.FACT
@@ -109,9 +110,6 @@ class Memory(BaseModel):
 
     # Additional metadata
     metadata: dict[str, Any] = Field(default_factory=dict)
-
-    class Config:
-        use_enum_values = True
 
     def to_search_text(self) -> str:
         """Generate searchable text representation."""

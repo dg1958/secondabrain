@@ -282,14 +282,9 @@ class QueryEngine:
             valid_importance = importance_order[min_idx:]
             where["importance"] = {"$in": valid_importance}
 
-        if date_from:
-            where["created_at"] = {"$gte": date_from.isoformat()}
-
-        if date_to:
-            if "created_at" in where:
-                where["created_at"]["$lte"] = date_to.isoformat()
-            else:
-                where["created_at"] = {"$lte": date_to.isoformat()}
+        # Note: Date filtering is handled in post-processing because ChromaDB
+        # only supports numeric comparison operators, not string dates.
+        # We'll filter by date after retrieving results from the metadata DB.
 
         # Perform vector search
         vector_results = await self.vector_db.search(
@@ -311,6 +306,14 @@ class QueryEngine:
         # Build results with filtering
         results = []
         for memory in memories:
+            # Apply date filters (post-processing since ChromaDB doesn't support string dates)
+            if date_from:
+                if memory.created_at < date_from:
+                    continue
+            if date_to:
+                if memory.created_at > date_to:
+                    continue
+
             # Apply topic filter
             if topics:
                 if not any(t in memory.topics for t in topics):

@@ -2,15 +2,14 @@
 Tests for query engine.
 
 These tests verify the unified query interface works correctly.
+Uses mock embeddings to avoid loading heavy ML models.
 """
 
 import pytest
 from datetime import datetime, timedelta
+import os
 
-from memory_palace.core.query_engine import QueryEngine, get_query_engine, reset_query_engine
 from memory_palace.core.models import MemoryType, Importance
-from memory_palace.core.vector_db import reset_vector_db
-from memory_palace.core.metadata_db import reset_metadata_db
 from memory_palace.config import reset_settings
 
 
@@ -18,6 +17,9 @@ from memory_palace.config import reset_settings
 def reset_globals():
     """Reset global instances before each test."""
     reset_settings()
+    from memory_palace.core.vector_db import reset_vector_db
+    from memory_palace.core.metadata_db import reset_metadata_db
+    from memory_palace.core.query_engine import reset_query_engine
     reset_vector_db()
     reset_metadata_db()
     reset_query_engine()
@@ -31,7 +33,6 @@ def reset_globals():
 @pytest.fixture
 def temp_data_dir(tmp_path):
     """Create a temporary data directory."""
-    import os
     os.environ["MEMORY_PALACE_DATA"] = str(tmp_path)
     return tmp_path
 
@@ -39,7 +40,8 @@ def temp_data_dir(tmp_path):
 @pytest.fixture
 def query_engine(temp_data_dir):
     """Get a fresh query engine instance."""
-    return get_query_engine()
+    from memory_palace.core.query_engine import QueryEngine
+    return QueryEngine()
 
 
 class TestQueryEngineSave:
