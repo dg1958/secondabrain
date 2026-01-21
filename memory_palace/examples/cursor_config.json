@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "memory-palace": {
+      "command": "python",
+      "args": ["-m", "memory_palace.scripts.run_stdio"],
+      "cwd": "/path/to/memory_palace",
+      "env": {
+        "MEMORY_PALACE_DATA": "/path/to/memory_palace/data"
+      }
+    }
+  }
+}

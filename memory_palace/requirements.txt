@@ -1,49 +1,40 @@
-# Memory Palace - AI Personal Knowledge Management System
-# Core dependencies
+# Memory Palace - MCP Server
+# Personal AI memory system with Model Context Protocol support
 
-# Vector database and embeddings
+# MCP SDK
+mcp>=1.0.0
+
+# Vector database
 chromadb>=0.4.0
+
+# Embeddings
 sentence-transformers>=2.2.0
 
-# LLM framework
-langchain>=0.1.0
-langchain-anthropic>=0.1.0
-langchain-community>=0.0.20
-
-# Web framework
-fastapi>=0.100.0
-uvicorn[standard]>=0.23.0
-
-# Data validation
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-
-# NLP
+# NLP (optional - for enhanced entity extraction)
 spacy>=3.5.0
+
+# Database
+aiosqlite>=0.19.0
+
+# Data models
+pydantic>=2.0.0
 
 # Configuration
 pyyaml>=6.0
 
-# Date/time handling
-python-dateutil>=2.8.0
-
-# CLI formatting
-rich>=13.0.0
-click>=8.0.0
-
-# HTTP client (for Fireflies API)
+# HTTP server (for Open WebUI, LibreChat SSE mode)
+fastapi>=0.100.0
+uvicorn>=0.23.0
+sse-starlette>=1.6.0
 httpx>=0.24.0
 
-# Async support
-aiofiles>=23.0.0
+# Utilities
+python-dateutil>=2.8.0
+rich>=13.0.0
 
 # Testing
 pytest>=7.0.0
 pytest-asyncio>=0.21.0
 
-# Logging
-loguru>=0.7.0
-
-# Utilities
-python-dotenv>=1.0.0
-tiktoken>=0.5.0  # For token counting
+# Note: Install spaCy model separately:
+# python -m spacy download en_core_web_sm

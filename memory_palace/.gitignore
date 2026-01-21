@@ -66,12 +66,13 @@ venv.bak/
 *.swo
 *~
 
-# Project specific
+# Data files
 data/
-logs/
-*.log
-config/settings.local.yaml
+*.db
+*.sqlite
 
-# OS
-.DS_Store
-Thumbs.db
+# ChromaDB
+chromadb/
+
+# Logs
+*.log
