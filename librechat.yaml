@@ -1,0 +1,281 @@
+# =============================================================================
+# LibreChat Configuration
+# =============================================================================
+# This file configures LibreChat with Memory Palace MCP integration.
+# Place this file in the LibreChat root directory.
+#
+# Documentation: https://www.librechat.ai/docs/configuration/librechat_yaml
+# =============================================================================
+
+version: 1.2.8
+
+# =============================================================================
+# MCP SERVERS
+# =============================================================================
+# Configure Model Context Protocol servers for tool integrations.
+# The memory palace server provides persistent memory capabilities.
+# =============================================================================
+
+mcpServers:
+  # ---------------------------------------------------------------------------
+  # Memory Palace MCP Server
+  # ---------------------------------------------------------------------------
+  # Provides persistent memory, semantic search, and timeline capabilities.
+  # Uses stdio transport (same as Claude Desktop).
+  memory-palace:
+    # Command to run the MCP server
+    command: "python"
+    args:
+      - "-m"
+      - "memory_palace.scripts.run_stdio"
+
+    # Working directory (update to your memory palace path)
+    cwd: "/app/memory_palace"
+
+    # Environment variables for the MCP server
+    env:
+      MEMORY_PALACE_DATA: "/app/memory_palace_data"
+      PYTHONPATH: "/app/memory_palace"
+      # Optional: Set log level
+      # LOG_LEVEL: "INFO"
+
+    # Timeout for MCP operations (milliseconds)
+    timeout: 30000
+
+    # Icon displayed in the UI (optional)
+    # iconPath: "/app/config/memory-palace-icon.svg"
+
+  # ---------------------------------------------------------------------------
+  # Alternative: HTTP/SSE Transport
+  # ---------------------------------------------------------------------------
+  # Use this if running memory palace as a separate HTTP service.
+  # Uncomment and configure if preferred over stdio transport.
+  #
+  # memory-palace-http:
+  #   type: "sse"
+  #   url: "http://memory-palace:8765/mcp/sse"
+  #   # Or for host-based server:
+  #   # url: "http://host.docker.internal:8765/mcp/sse"
+  #   timeout: 30000
+
+  # ---------------------------------------------------------------------------
+  # Optional: Additional MCP Servers
+  # ---------------------------------------------------------------------------
+  # Add other MCP servers here as needed.
+  #
+  # filesystem:
+  #   command: "npx"
+  #   args:
+  #     - "-y"
+  #     - "@modelcontextprotocol/server-filesystem"
+  #     - "/allowed/path"
+  #   timeout: 10000
+  #
+  # brave-search:
+  #   command: "npx"
+  #   args:
+  #     - "-y"
+  #     - "@anthropics/mcp-server-brave-search"
+  #   env:
+  #     BRAVE_API_KEY: "your-brave-api-key"
+  #   timeout: 15000
+
+# =============================================================================
+# ENDPOINTS CONFIGURATION
+# =============================================================================
+# Configure AI model providers and their settings.
+# =============================================================================
+
+endpoints:
+  # ---------------------------------------------------------------------------
+  # Anthropic (Claude Models)
+  # ---------------------------------------------------------------------------
+  anthropic:
+    # Models available in the UI
+    models:
+      default:
+        - "claude-sonnet-4-20250514"
+        - "claude-opus-4-0-20250514"
+        - "claude-haiku-4-0-20250514"
+      # Set to false to use the list above; true to fetch from API
+      fetch: false
+
+    # Detailed model specifications
+    modelSpecs:
+      - name: "claude-sonnet-4-20250514"
+        displayName: "Claude Sonnet 4"
+        description: "Balanced performance and speed. Best for most tasks."
+        maxContextTokens: 200000
+        maxOutputTokens: 8192
+        default: true
+        iconURL: "https://www.anthropic.com/favicon.ico"
+        streaming: true
+
+      - name: "claude-opus-4-0-20250514"
+        displayName: "Claude Opus 4"
+        description: "Most capable model. Best for complex reasoning and analysis."
+        maxContextTokens: 200000
+        maxOutputTokens: 8192
+        iconURL: "https://www.anthropic.com/favicon.ico"
+        streaming: true
+
+      - name: "claude-haiku-4-0-20250514"
+        displayName: "Claude Haiku 4"
+        description: "Fastest model. Best for quick tasks and high volume."
+        maxContextTokens: 200000
+        maxOutputTokens: 4096
+        iconURL: "https://www.anthropic.com/favicon.ico"
+        streaming: true
+
+    # Title generation model (uses faster model for efficiency)
+    titleModel: "claude-haiku-4-0-20250514"
+
+    # Default prompt prefix for Anthropic models (optional)
+    # promptPrefix: "You have access to a memory palace for persistent memory."
+
+  # ---------------------------------------------------------------------------
+  # Optional: OpenAI (if API key provided)
+  # ---------------------------------------------------------------------------
+  # openai:
+  #   models:
+  #     default:
+  #       - "gpt-4-turbo"
+  #       - "gpt-4o"
+  #     fetch: false
+
+# =============================================================================
+# MEMORY SETTINGS (LibreChat Built-in)
+# =============================================================================
+# This is LibreChat's lightweight session memory, SEPARATE from your
+# Memory Palace MCP server. The MCP server provides deep persistent memory.
+# =============================================================================
+
+memory:
+  # Enable LibreChat's built-in memory
+  disabled: false
+
+  # Personalize responses based on memory
+  personalize: true
+
+  # Maximum tokens for memory context
+  tokenLimit: 2000
+
+  # Number of recent messages to include
+  messageWindowSize: 10
+
+  # Auto-save key information from conversations
+  autoSave: true
+
+# =============================================================================
+# INTERFACE CONFIGURATION
+# =============================================================================
+# Customize the LibreChat user interface.
+# =============================================================================
+
+interface:
+  # Show endpoint selector in UI
+  endpointsMenu: true
+
+  # Show model selector in UI
+  modelSelect: true
+
+  # Enable conversation presets
+  presets: true
+
+  # Enable multiple simultaneous conversations
+  multiConvo: true
+
+  # Enable bookmarking conversations
+  bookmarks: true
+
+  # Show token count in UI
+  tokenDisplay: true
+
+  # Default theme (system, light, dark)
+  defaultTheme: "system"
+
+  # Custom logo (optional)
+  # customLogo: "/images/custom-logo.svg"
+
+  # Custom footer (optional)
+  # customFooter: "Powered by Memory Palace"
+
+# =============================================================================
+# REGISTRATION & AUTHENTICATION
+# =============================================================================
+# Configure user registration and login options.
+# =============================================================================
+
+registration:
+  # Social login providers (leave empty to disable)
+  socialLogins: []
+  # socialLogins: ["google", "github"]
+
+  # Allowed email domains (empty = all domains allowed)
+  allowedDomains: []
+  # allowedDomains: ["yourcompany.com"]
+
+# =============================================================================
+# RATE LIMITING
+# =============================================================================
+# Protect against abuse with rate limits.
+# =============================================================================
+
+rateLimits:
+  # File uploads
+  fileUploads:
+    ipMax: 100
+    ipWindowInMinutes: 60
+    userMax: 50
+    userWindowInMinutes: 60
+
+  # Conversation requests
+  conversationsImport:
+    ipMax: 100
+    ipWindowInMinutes: 60
+    userMax: 100
+    userWindowInMinutes: 60
+
+# =============================================================================
+# FILE CONFIGURATION
+# =============================================================================
+# Settings for file uploads and processing.
+# =============================================================================
+
+fileConfig:
+  # Maximum file size in MB
+  serverFileSizeLimit: 100
+
+  # Allowed file types
+  endpoints:
+    anthropic:
+      fileLimit: 10
+      fileSizeLimit: 20
+      supportedMimeTypes:
+        - "image/jpeg"
+        - "image/png"
+        - "image/gif"
+        - "image/webp"
+        - "application/pdf"
+        - "text/plain"
+        - "text/markdown"
+        - "text/csv"
+
+# =============================================================================
+# SPEECH & AUDIO
+# =============================================================================
+# Configure text-to-speech and speech-to-text (optional).
+# =============================================================================
+
+speech:
+  # Text-to-speech
+  tts:
+    # Enable TTS (requires additional configuration)
+    enabled: false
+    # provider: "openai"
+
+  # Speech-to-text
+  stt:
+    # Enable STT (requires additional configuration)
+    enabled: false
+    # provider: "openai"
