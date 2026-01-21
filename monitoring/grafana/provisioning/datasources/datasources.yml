@@ -1,0 +1,28 @@
+# Grafana Datasources Configuration
+# ==================================
+
+apiVersion: 1
+
+datasources:
+  # Prometheus - Primary metrics store
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: "POST"
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: "2.44.0"
+
+  # AlertManager - For alert visualization
+  - name: AlertManager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    editable: false
+    jsonData:
+      implementation: prometheus

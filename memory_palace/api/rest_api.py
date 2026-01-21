@@ -7,8 +7,10 @@ This module provides HTTP endpoints for:
 - Timeline generation
 - Database management
 - Fireflies sync
+- Prometheus metrics (at /metrics)
 """
 
+import os
 from datetime import datetime
 from typing import Optional
 
@@ -46,6 +48,18 @@ from query.result_synthesizer import get_result_synthesizer
 from query.temporal_filter import TemporalFilter
 from storage.vector_db import VectorDB, get_vector_db
 
+# Metrics imports (conditional)
+METRICS_ENABLED = os.environ.get("METRICS_ENABLED", "false").lower() == "true"
+
+if METRICS_ENABLED:
+    try:
+        from monitoring.middleware import setup_prometheus_middleware
+        from monitoring.health import get_health_checker, HealthStatus
+        from monitoring.metrics import get_metrics_manager
+    except ImportError:
+        METRICS_ENABLED = False
+        logger.warning("Monitoring module not available, metrics disabled")
+
 # API version
 API_VERSION = "1.0.0"
 
@@ -62,7 +76,7 @@ def create_app() -> FastAPI:
     """
     app = FastAPI(
         title="Memory Palace API",
-        description="Personal AI Memory Management System",
+        description="Personal AI Memory Management System with Prometheus Metrics",
         version=API_VERSION,
         docs_url="/docs" if settings.get("api", "docs_enabled", default=True) else None,
         redoc_url="/redoc" if settings.get("api", "docs_enabled", default=True) else None,
@@ -77,6 +91,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Add Prometheus metrics middleware if enabled
+    if METRICS_ENABLED:
+        setup_prometheus_middleware(
+            app,
+            app_name="memory_palace",
+            metrics_path="/metrics",
+        )
+        logger.info("Prometheus metrics enabled at /metrics")
 
     return app
 
@@ -136,6 +159,13 @@ async def health_check():
 
         engine = get_query_engine(settings.anthropic_api_key)
         llm_available = engine.planner.is_available
+
+        # Update metrics if enabled
+        if METRICS_ENABLED:
+            metrics = get_metrics_manager()
+            metrics.set_component_health("vector_db", db_available)
+            metrics.set_component_health("embedding_service", embedding_available)
+            metrics.set_component_health("llm_service", llm_available)
 
         return HealthResponse(
             status="healthy",

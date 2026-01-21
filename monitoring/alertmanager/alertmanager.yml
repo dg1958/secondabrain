@@ -1,0 +1,138 @@
+# AlertManager Configuration for Memory Palace
+# =============================================
+
+global:
+  # The smarthost and SMTP sender used for mail notifications.
+  # smtp_smarthost: 'smtp.gmail.com:587'
+  # smtp_from: 'alertmanager@example.com'
+  # smtp_auth_username: 'your-email@gmail.com'
+  # smtp_auth_password: 'your-app-password'
+
+  # Slack webhook URL (uncomment and configure)
+  # slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+
+  # Default resolve timeout
+  resolve_timeout: 5m
+
+# The directory from which notification templates are read.
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# The root route - all alerts start here
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'component', 'severity']
+
+  # How long to wait before sending a notification about new alerts
+  group_wait: 30s
+
+  # How long to wait before sending notification about new alerts added to group
+  group_interval: 5m
+
+  # How long to wait before re-sending a notification
+  repeat_interval: 4h
+
+  # Child routes for different severities
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Warning alerts
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+      group_wait: 1m
+      repeat_interval: 4h
+
+    # Info alerts - less urgent
+    - match:
+        severity: info
+      receiver: 'info-receiver'
+      group_wait: 5m
+      repeat_interval: 24h
+
+# Inhibition rules - prevent duplicate alerts
+inhibit_rules:
+  # If service is down, suppress all other alerts for that component
+  - source_match:
+      alertname: 'MemoryPalaceAPIDown'
+    target_match_re:
+      component: 'api'
+    equal: ['instance']
+
+  - source_match:
+      alertname: 'MemoryPalaceMCPDown'
+    target_match_re:
+      component: 'mcp'
+    equal: ['instance']
+
+  # If vector DB is unhealthy, suppress query alerts
+  - source_match:
+      alertname: 'VectorDatabaseUnhealthy'
+    target_match_re:
+      component: '(query_engine|embedding)'
+    equal: ['instance']
+
+# Receivers - define where to send alerts
+receivers:
+  # Default receiver - logs to AlertManager
+  - name: 'default-receiver'
+    # webhook_configs:
+    #   - url: 'http://localhost:5001/api/alerts'
+
+  # Critical alerts
+  - name: 'critical-receiver'
+    # Email notification (uncomment and configure)
+    # email_configs:
+    #   - to: 'oncall@example.com'
+    #     send_resolved: true
+    #     headers:
+    #       Subject: '[CRITICAL] Memory Palace Alert: {{ .GroupLabels.alertname }}'
+
+    # Slack notification (uncomment and configure)
+    # slack_configs:
+    #   - channel: '#alerts-critical'
+    #     send_resolved: true
+    #     title: '{{ .Status | toUpper }}: {{ .GroupLabels.alertname }}'
+    #     text: >-
+    #       {{ range .Alerts }}
+    #         *Alert:* {{ .Annotations.summary }}
+    #         *Description:* {{ .Annotations.description }}
+    #         *Severity:* {{ .Labels.severity }}
+    #         *Component:* {{ .Labels.component }}
+    #       {{ end }}
+
+    # PagerDuty (uncomment and configure)
+    # pagerduty_configs:
+    #   - service_key: 'your-pagerduty-key'
+    #     severity: critical
+
+    # Webhook to custom endpoint
+    # webhook_configs:
+    #   - url: 'http://localhost:5001/api/alerts/critical'
+    #     send_resolved: true
+
+  # Warning alerts
+  - name: 'warning-receiver'
+    # slack_configs:
+    #   - channel: '#alerts-warning'
+    #     send_resolved: true
+    #     title: '{{ .Status | toUpper }}: {{ .GroupLabels.alertname }}'
+    #     text: >-
+    #       {{ range .Alerts }}
+    #         *Alert:* {{ .Annotations.summary }}
+    #         *Description:* {{ .Annotations.description }}
+    #       {{ end }}
+
+  # Info alerts
+  - name: 'info-receiver'
+    # slack_configs:
+    #   - channel: '#alerts-info'
+    #     send_resolved: false

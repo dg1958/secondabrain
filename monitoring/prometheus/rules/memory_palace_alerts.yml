@@ -1,0 +1,297 @@
+# Memory Palace Alerting Rules
+# ============================
+
+groups:
+  # ===========================================================================
+  # Service Health Alerts
+  # ===========================================================================
+  - name: service_health
+    interval: 30s
+    rules:
+      # Service Down
+      - alert: MemoryPalaceAPIDown
+        expr: up{job="memory-palace-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Memory Palace API is down"
+          description: "Memory Palace API has been unreachable for more than 1 minute."
+
+      - alert: MemoryPalaceMCPDown
+        expr: up{job="memory-palace-mcp"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: mcp
+        annotations:
+          summary: "Memory Palace MCP server is down"
+          description: "Memory Palace MCP server has been unreachable for more than 2 minutes."
+
+      # Component Health
+      - alert: ComponentUnhealthy
+        expr: memory_palace_component_health == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Component {{ $labels.component }} is unhealthy"
+          description: "The {{ $labels.component }} component has been unhealthy for more than 2 minutes."
+
+      - alert: VectorDatabaseUnhealthy
+        expr: memory_palace_component_health{component="vector_db"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: vector_db
+        annotations:
+          summary: "Vector database is unhealthy"
+          description: "The ChromaDB vector database has been unhealthy for more than 1 minute. Memory search is not functional."
+
+  # ===========================================================================
+  # Performance Alerts
+  # ===========================================================================
+  - name: performance
+    interval: 30s
+    rules:
+      # High API Latency
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(memory_palace_http_request_duration_seconds_bucket[5m])) by (le, endpoint)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile API latency for {{ $labels.endpoint }} is above 2 seconds."
+
+      # High Query Latency
+      - alert: HighQueryLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(memory_palace_query_duration_seconds_bucket[5m])) by (le, query_type)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: query_engine
+        annotations:
+          summary: "High query latency detected"
+          description: "95th percentile query latency for {{ $labels.query_type }} is above 5 seconds."
+
+      # High MCP Tool Latency
+      - alert: HighMCPToolLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(memory_palace_mcp_tool_duration_seconds_bucket[5m])) by (le, tool_name)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: mcp
+        annotations:
+          summary: "High MCP tool latency"
+          description: "95th percentile latency for {{ $labels.tool_name }} is above 10 seconds."
+
+      # High Embedding Latency
+      - alert: HighEmbeddingLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(memory_palace_embedding_duration_seconds_bucket[5m])) by (le, model)
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          component: embedding
+        annotations:
+          summary: "High embedding generation latency"
+          description: "95th percentile embedding latency is above 3 seconds."
+
+  # ===========================================================================
+  # Error Rate Alerts
+  # ===========================================================================
+  - name: error_rates
+    interval: 30s
+    rules:
+      # High HTTP Error Rate
+      - alert: HighHTTPErrorRate
+        expr: |
+          sum(rate(memory_palace_http_requests_total{status_code=~"5.."}[5m])) /
+          sum(rate(memory_palace_http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High HTTP error rate"
+          description: "More than 5% of HTTP requests are failing with 5xx errors."
+
+      # High MCP Error Rate
+      - alert: HighMCPErrorRate
+        expr: |
+          sum(rate(memory_palace_mcp_tool_calls_total{status="error"}[5m])) /
+          sum(rate(memory_palace_mcp_tool_calls_total[5m])) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          component: mcp
+        annotations:
+          summary: "High MCP tool error rate"
+          description: "More than 10% of MCP tool calls are failing."
+
+      # High Query Error Rate
+      - alert: HighQueryErrorRate
+        expr: |
+          sum(rate(memory_palace_queries_total{status="error"}[5m])) /
+          sum(rate(memory_palace_queries_total[5m])) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          component: query_engine
+        annotations:
+          summary: "High query error rate"
+          description: "More than 10% of queries are failing."
+
+      # Component Errors Spike
+      - alert: ComponentErrorsSpike
+        expr: |
+          sum(increase(memory_palace_errors_total[5m])) by (component) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error spike in {{ $labels.component }}"
+          description: "More than 10 errors in {{ $labels.component }} in the last 5 minutes."
+
+  # ===========================================================================
+  # Resource Alerts
+  # ===========================================================================
+  - name: resources
+    interval: 60s
+    rules:
+      # Large Database Size
+      - alert: LargeDatabaseSize
+        expr: memory_palace_db_total_chunks > 1000000
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "Vector database is large"
+          description: "The vector database has more than 1 million chunks. Consider cleanup or optimization."
+
+      # High Embedding Queue
+      - alert: EmbeddingQueueBacklog
+        expr: memory_palace_embedding_queue_size > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: embedding
+        annotations:
+          summary: "Embedding queue backlog"
+          description: "More than 100 items waiting in the embedding queue."
+
+      # High Connection Count
+      - alert: HighActiveConnections
+        expr: memory_palace_http_active_connections > 50
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High number of active connections"
+          description: "More than 50 active HTTP connections. May indicate load issues or connection leaks."
+
+  # ===========================================================================
+  # LLM/API Alerts
+  # ===========================================================================
+  - name: llm_api
+    interval: 60s
+    rules:
+      # High LLM Latency
+      - alert: HighLLMLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(memory_palace_llm_api_duration_seconds_bucket[5m])) by (le, provider)
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "High LLM API latency"
+          description: "95th percentile LLM API latency for {{ $labels.provider }} is above 30 seconds."
+
+      # LLM API Errors
+      - alert: LLMAPIErrors
+        expr: |
+          sum(rate(memory_palace_llm_api_calls_total{status="error"}[15m])) /
+          sum(rate(memory_palace_llm_api_calls_total[15m])) > 0.20
+        for: 10m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "High LLM API error rate"
+          description: "More than 20% of LLM API calls are failing."
+
+      # High Token Usage (cost alert)
+      - alert: HighTokenUsage
+        expr: |
+          sum(increase(memory_palace_llm_tokens_used_total[1h])) > 100000
+        for: 0m
+        labels:
+          severity: info
+          component: llm
+        annotations:
+          summary: "High token usage"
+          description: "More than 100,000 tokens used in the last hour."
+
+  # ===========================================================================
+  # Ingestion Alerts
+  # ===========================================================================
+  - name: ingestion
+    interval: 60s
+    rules:
+      # High Ingestion Failure Rate
+      - alert: HighIngestionFailureRate
+        expr: |
+          sum(rate(memory_palace_documents_ingested_total{status="error"}[15m])) /
+          sum(rate(memory_palace_documents_ingested_total[15m])) > 0.20
+        for: 10m
+        labels:
+          severity: warning
+          component: ingestion
+        annotations:
+          summary: "High ingestion failure rate"
+          description: "More than 20% of document ingestions are failing."
+
+      # High Duplicate Rate
+      - alert: HighDuplicateRate
+        expr: |
+          sum(rate(memory_palace_duplicates_detected_total[1h])) /
+          sum(rate(memory_palace_documents_ingested_total[1h])) > 0.50
+        for: 30m
+        labels:
+          severity: info
+          component: ingestion
+        annotations:
+          summary: "High duplicate detection rate"
+          description: "More than 50% of ingested documents are duplicates. May indicate misconfiguration."
+
+      # Long Ingestion Time
+      - alert: SlowIngestion
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(memory_palace_ingestion_duration_seconds_bucket[5m])) by (le, source_type)
+          ) > 60
+        for: 10m
+        labels:
+          severity: warning
+          component: ingestion
+        annotations:
+          summary: "Slow document ingestion"
+          description: "95th percentile ingestion time for {{ $labels.source_type }} is above 60 seconds."
