@@ -1,0 +1,167 @@
+version: '3.8'
+
+# =============================================================================
+# LibreChat + Memory Palace MCP Server
+# =============================================================================
+# This Docker Compose setup provides:
+# - LibreChat web UI (ChatGPT-style interface)
+# - MongoDB for conversation persistence
+# - Redis for caching (optional but recommended)
+# - Memory Palace MCP integration
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # LibreChat API Server
+  # ===========================================================================
+  api:
+    image: ghcr.io/danny-avila/librechat:latest
+    container_name: librechat-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3080}:3080"
+    depends_on:
+      - mongodb
+      - rag_api
+    volumes:
+      # Configuration files
+      - ./librechat.yaml:/app/librechat.yaml:ro
+      - ./config:/app/config:ro
+
+      # Persistent data
+      - ./data/uploads:/app/client/public/images
+      - ./data/logs:/app/api/logs
+
+      # Memory Palace MCP server mount (update path as needed)
+      - ${MEMORY_PALACE_PATH:-./memory_palace}:/app/memory_palace:ro
+
+      # Memory Palace data directory
+      - ${MEMORY_PALACE_DATA:-./data/memory_palace}:/app/memory_palace_data
+    environment:
+      # Core settings from .env
+      - HOST=${HOST:-0.0.0.0}
+      - PORT=${PORT:-3080}
+      - NODE_ENV=${NODE_ENV:-production}
+
+      # MongoDB connection
+      - MONGO_URI=mongodb://mongodb:27017/LibreChat
+
+      # Redis connection
+      - REDIS_URI=redis://redis:6379
+
+      # Security keys (MUST be set in .env)
+      - CREDS_KEY=${CREDS_KEY}
+      - CREDS_IV=${CREDS_IV}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+
+      # Anthropic API
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_MODELS=${ANTHROPIC_MODELS:-claude-sonnet-4-20250514,claude-opus-4-0-20250514}
+
+      # RAG API for vector search
+      - RAG_API_URL=http://rag_api:8000
+
+      # Memory Palace environment
+      - MEMORY_PALACE_DATA=/app/memory_palace_data
+      - PYTHONPATH=/app/memory_palace
+
+      # Optional: Disable other providers
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_KEY=${GOOGLE_KEY:-}
+      - AZURE_API_KEY=${AZURE_API_KEY:-}
+
+      # Debug mode
+      - DEBUG_LOGGING=${DEBUG_LOGGING:-false}
+      - DEBUG_CONSOLE=${DEBUG_CONSOLE:-false}
+    extra_hosts:
+      # Allow container to reach host services
+      - "host.docker.internal:host-gateway"
+    networks:
+      - librechat-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===========================================================================
+  # MongoDB Database
+  # ===========================================================================
+  mongodb:
+    image: mongo:7.0
+    container_name: librechat-mongodb
+    restart: unless-stopped
+    volumes:
+      - ./data/mongodb:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=LibreChat
+    networks:
+      - librechat-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ===========================================================================
+  # Redis Cache (Optional but Recommended)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: librechat-redis
+    restart: unless-stopped
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - librechat-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # RAG API (Vector Search Service)
+  # ===========================================================================
+  rag_api:
+    image: ghcr.io/danny-avila/librechat-rag-api-dev-lite:latest
+    container_name: librechat-rag-api
+    restart: unless-stopped
+    environment:
+      - RAG_PORT=8000
+      - COLLECTION_NAME=librechat
+      - EMBEDDINGS_PROVIDER=${RAG_EMBEDDINGS_PROVIDER:-huggingface}
+      - HF_TOKEN=${HF_TOKEN:-}
+      - CHUNK_SIZE=${RAG_CHUNK_SIZE:-1500}
+      - CHUNK_OVERLAP=${RAG_CHUNK_OVERLAP:-100}
+    volumes:
+      - ./data/rag:/app/data
+    networks:
+      - librechat-network
+
+  # ===========================================================================
+  # Memory Palace HTTP Server (Optional - for SSE transport)
+  # ===========================================================================
+  # Uncomment if you prefer HTTP/SSE transport instead of stdio
+  # memory-palace:
+  #   build:
+  #     context: ${MEMORY_PALACE_PATH:-./memory_palace}
+  #     dockerfile: Dockerfile
+  #   container_name: memory-palace-server
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8765:8765"
+  #   volumes:
+  #     - ${MEMORY_PALACE_DATA:-./data/memory_palace}:/app/data
+  #   environment:
+  #     - MEMORY_PALACE_PORT=8765
+  #     - MEMORY_PALACE_DATA=/app/data
+  #   networks:
+  #     - librechat-network
+
+networks:
+  librechat-network:
+    driver: bridge
