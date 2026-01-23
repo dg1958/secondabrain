@@ -393,7 +393,6 @@ class QueryEngine:
             Combined list of QueryResult objects
         """
         all_results: Dict[str, QueryResult] = {}
-        seen_texts: set = set()
 
         for query in queries:
             results = self.semantic_search(query, top_k=top_k_per_query)

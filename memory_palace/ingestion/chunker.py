@@ -9,7 +9,7 @@ This module provides:
 """
 
 import re
-from typing import List, Optional, Tuple
+from typing import List
 
 from loguru import logger
 

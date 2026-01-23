@@ -37,14 +37,14 @@ from api.schemas import (
     TimelineRequest,
     TimelineResponse,
 )
-from api.fireflies_sync import FirefliesSync, get_fireflies_sync
+from api.fireflies_sync import get_fireflies_sync
 from config import settings
 from config.schema import QueryFilter, SourceType
-from ingestion.batch_importer import BatchImporter, get_batch_importer
-from query.query_engine import QueryEngine, get_query_engine
+from ingestion.batch_importer import get_batch_importer
+from query.query_engine import get_query_engine
 from query.result_synthesizer import get_result_synthesizer
 from query.temporal_filter import TemporalFilter
-from storage.vector_db import VectorDB, get_vector_db
+from storage.vector_db import get_vector_db
 
 # API version
 API_VERSION = "1.0.0"

@@ -19,7 +19,6 @@ except ImportError:
     Anthropic = None
     logger.warning("anthropic not installed. LLM features disabled.")
 
-from config.schema import QueryFilter
 
 
 class QueryPlan:

@@ -321,12 +321,12 @@ Synthesize a response:"""
             Markdown-formatted string
         """
         lines = [
-            f"# Memory Query Results",
-            f"",
+            "# Memory Query Results",
+            "",
             f"**Query:** {query}",
             f"**Results:** {len(results)} memories found",
             f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-            f"",
+            "",
         ]
 
         # Add synthesis
