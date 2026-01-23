@@ -10,6 +10,7 @@ This module provides:
 
 import re
 from collections import Counter
+from importlib import import_module, util
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from loguru import logger
@@ -22,7 +23,7 @@ except ImportError:
     Language = None
     logger.warning("spaCy not installed. NER features disabled.")
 
-from config.schema import EntityType, MemoryMetadata, SentimentLabel
+from config.schema import MemoryMetadata, SentimentLabel
 
 
 class MetadataExtractor:
@@ -167,43 +168,64 @@ class MetadataExtractor:
         if not self.enable_sentiment:
             return 0.0, SentimentLabel.NEUTRAL
 
-        try:
-            # Try VADER first (handles social media text well)
-            try:
-                from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-                analyzer = SentimentIntensityAnalyzer()
-                scores = analyzer.polarity_scores(text)
-                compound = scores["compound"]
-            except ImportError:
-                # Fallback to TextBlob
-                try:
-                    from textblob import TextBlob
-                    blob = TextBlob(text)
-                    compound = blob.sentiment.polarity
-                except ImportError:
-                    logger.warning(
-                        "No sentiment analyzer available. "
-                        "Install vaderSentiment or textblob."
-                    )
-                    return 0.0, SentimentLabel.NEUTRAL
+        compound = None
+        vader_spec = util.find_spec("vaderSentiment")
+        if vader_spec is not None:
+            vader_module = import_module("vaderSentiment.vaderSentiment")
+            analyzer = vader_module.SentimentIntensityAnalyzer()
+            scores = analyzer.polarity_scores(text)
+            compound = scores["compound"]
 
-            # Map score to label
-            if compound <= -0.6:
-                label = SentimentLabel.VERY_NEGATIVE
-            elif compound <= -0.2:
-                label = SentimentLabel.NEGATIVE
-            elif compound < 0.2:
-                label = SentimentLabel.NEUTRAL
-            elif compound < 0.6:
-                label = SentimentLabel.POSITIVE
-            else:
-                label = SentimentLabel.VERY_POSITIVE
+        if compound is None:
+            textblob_spec = util.find_spec("textblob")
+            if textblob_spec is not None:
+                textblob_module = import_module("textblob")
+                blob = textblob_module.TextBlob(text)
+                compound = blob.sentiment.polarity
 
-            return compound, label
+        if compound is None:
+            compound = self._lexicon_sentiment(text)
 
-        except Exception as e:
-            logger.warning(f"Sentiment analysis failed: {e}")
-            return 0.0, SentimentLabel.NEUTRAL
+        # Map score to label
+        if compound <= -0.6:
+            label = SentimentLabel.VERY_NEGATIVE
+        elif compound <= -0.2:
+            label = SentimentLabel.NEGATIVE
+        elif compound < 0.2:
+            label = SentimentLabel.NEUTRAL
+        elif compound < 0.6:
+            label = SentimentLabel.POSITIVE
+        else:
+            label = SentimentLabel.VERY_POSITIVE
+
+        return compound, label
+
+    def _lexicon_sentiment(self, text: str) -> float:
+        """Simple lexicon-based sentiment fallback."""
+        positive_words = {
+            "amazing", "awesome", "best", "brilliant", "excellent", "fantastic",
+            "good", "great", "happy", "love", "outstanding", "positive", "success",
+            "wonderful",
+        }
+        negative_words = {
+            "angry", "awful", "bad", "disappointing", "disaster", "failure",
+            "horrible", "hate", "negative", "poor", "problem", "sad", "terrible",
+            "worst",
+        }
+        tokens = re.findall(r"[a-zA-Z']+", text.lower())
+        if not tokens:
+            return 0.0
+
+        positives = sum(1 for token in tokens if token in positive_words)
+        negatives = sum(1 for token in tokens if token in negative_words)
+        if positives == 0 and negatives == 0:
+            logger.warning(
+                "No sentiment analyzer available. "
+                "Install vaderSentiment or textblob."
+            )
+            return 0.0
+
+        return (positives - negatives) / max(positives + negatives, 1)
 
     def extract_topics(
         self,

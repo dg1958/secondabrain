@@ -141,9 +141,9 @@ Third paragraph to test chunking."""
                 words2 = set(chunks[i + 1].split()[:10])
                 # There should be some overlap
                 # Note: overlap might not always be exact due to semantic boundaries
-                # So we just verify chunks exist
-                assert len(chunks[i]) > 0
-                assert len(chunks[i + 1]) > 0
+                assert words1
+                assert words2
+                assert words1.intersection(words2)
 
 
 class TestChunkingStrategies:

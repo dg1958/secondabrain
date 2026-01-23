@@ -12,6 +12,20 @@ from typing import Any, Dict, Optional
 import yaml
 from loguru import logger
 
+from .schema import (
+    Document,
+    DocumentFormat,
+    EntityType,
+    FirefliesTranscript,
+    IngestionResult,
+    MemoryChunk,
+    MemoryMetadata,
+    QueryFilter,
+    QueryResponse,
+    QueryResult,
+    SentimentLabel,
+    SourceType,
+)
 
 class Settings:
     """
@@ -142,22 +156,6 @@ class Settings:
 
 # Global settings instance
 settings = Settings()
-
-# Re-export schema classes
-from .schema import (
-    Document,
-    DocumentFormat,
-    EntityType,
-    FirefliesTranscript,
-    IngestionResult,
-    MemoryChunk,
-    MemoryMetadata,
-    QueryFilter,
-    QueryResponse,
-    QueryResult,
-    SentimentLabel,
-    SourceType,
-)
 
 __all__ = [
     "settings",

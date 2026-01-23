@@ -9,7 +9,6 @@ This module provides:
 """
 
 import asyncio
-import os
 import shutil
 import time
 from datetime import datetime
@@ -21,7 +20,6 @@ from loguru import logger
 from config.schema import (
     Document,
     IngestionResult,
-    MemoryChunk,
     MemoryMetadata,
     SourceType,
 )

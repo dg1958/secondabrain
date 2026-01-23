@@ -12,7 +12,7 @@ import asyncio
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import click
 from rich.console import Console
@@ -25,7 +25,6 @@ from rich.table import Table
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import settings
-from config.schema import SourceType
 
 console = Console()
 
@@ -331,7 +330,7 @@ def serve(host: str, port: int, reload: bool):
         memory-palace serve --host 0.0.0.0 --port 8080
         memory-palace serve --reload  # for development
     """
-    console.print(f"[bold green]Starting Memory Palace API server...[/bold green]")
+    console.print("[bold green]Starting Memory Palace API server...[/bold green]")
     console.print(f"[dim]Host: {host}, Port: {port}[/dim]")
     console.print(f"[dim]API docs: http://{host}:{port}/docs[/dim]\n")
 
