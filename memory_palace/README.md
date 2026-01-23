@@ -13,6 +13,7 @@ A RAG-based personal knowledge management system that ingests conversation trans
 - **Timeline Reconstruction**: Chronological views of related memories
 - **REST API**: Full HTTP API for programmatic access
 - **CLI Interface**: Rich command-line interface for all operations
+- **MCP Server**: Model Context Protocol server for Claude Desktop and LibreChat
 
 ## Quick Start
 
@@ -158,6 +159,58 @@ python main.py clear
 # Interactive query mode
 python main.py interactive
 ```
+
+## MCP Server
+
+Memory Palace can run as an MCP (Model Context Protocol) server, allowing Claude Desktop, LibreChat, and other MCP-compatible clients to use it as a tool.
+
+### Running the MCP Server
+
+```bash
+# Run with stdio transport (for Claude Desktop)
+python -m memory_palace.mcp.server
+
+# Or use the script
+python scripts/run_stdio.py
+
+# Run with HTTP transport
+python scripts/run_http.py --host 0.0.0.0 --port 9000
+```
+
+### Claude Desktop Configuration
+
+Add to your Claude Desktop config (`~/.config/claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "memory-palace": {
+      "command": "python",
+      "args": ["-m", "memory_palace.mcp.server"],
+      "cwd": "/path/to/memory_palace"
+    }
+  }
+}
+```
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `search_memories` | Semantic search with filters |
+| `search_by_entity` | Find memories about a person/org/concept |
+| `search_by_date_range` | Find memories in a time period |
+| `timeline_query` | Chronological view of a topic |
+| `get_topic_evolution` | How thinking evolved over time |
+| `save_memory` | Store a new memory |
+| `save_conversation_summary` | Store conversation summary |
+| `list_entities` | List known entities |
+| `get_entity_profile` | Detailed entity information |
+| `update_memory` | Update existing memory |
+| `delete_memory` | Remove a memory |
+| `get_memory_stats` | Database statistics |
+| `list_topics` | List all topics |
+| `list_recent` | Recent memories |
 
 ## API Endpoints
 
@@ -343,20 +396,39 @@ memory_palace/
 ├── config/
 │   ├── settings.yaml      # Configuration template
 │   └── schema.py          # Pydantic data models
+├── core/                  # Async modules (MCP server path)
+│   ├── vector_db.py       # Async ChromaDB wrapper
+│   ├── query_engine.py    # Async query interface
+│   ├── metadata_db.py     # SQLite metadata storage
+│   ├── metadata_extractor.py  # Re-exports from ingestion
+│   └── models.py          # Core data models
 ├── ingestion/
 │   ├── chunker.py         # Text chunking
-│   ├── metadata_extractor.py  # NER, sentiment, topics
+│   ├── metadata_extractor.py  # NER, sentiment, topics (canonical)
 │   ├── transcript_parser.py   # Format parsing
 │   └── batch_importer.py  # Batch processing
-├── storage/
-│   ├── vector_db.py       # ChromaDB wrapper
+├── storage/               # Sync modules (CLI/API path)
+│   ├── vector_db.py       # Sync ChromaDB wrapper
 │   ├── embedding_service.py   # Embeddings
 │   └── deduplication.py   # Duplicate detection
-├── query/
-│   ├── query_engine.py    # Main query interface
+├── query/                 # Sync query modules (CLI/API path)
+│   ├── query_engine.py    # Sync query interface
 │   ├── temporal_filter.py # Date parsing
 │   ├── agentic_planner.py # LLM query planning
 │   └── result_synthesizer.py  # Result synthesis
+├── mcp/                   # Model Context Protocol server
+│   ├── server.py          # MCP server implementation
+│   ├── schemas.py         # MCP request/response schemas
+│   ├── tools/             # MCP tool implementations
+│   │   ├── search.py      # Search tools
+│   │   ├── save.py        # Memory save tools
+│   │   ├── manage.py      # Update/delete tools
+│   │   ├── entities.py    # Entity tools
+│   │   ├── timeline.py    # Timeline tools
+│   │   └── browse.py      # Browsing tools
+│   └── transports/        # MCP transport implementations
+│       ├── stdio_transport.py  # Standard I/O
+│       └── http_transport.py   # HTTP transport
 ├── api/
 │   ├── rest_api.py        # FastAPI endpoints
 │   ├── fireflies_sync.py  # Fireflies integration
@@ -368,6 +440,25 @@ memory_palace/
 ├── main.py                # Entry point
 └── requirements.txt       # Dependencies
 ```
+
+### Architecture Note: Async vs Sync Paths
+
+The codebase supports two runtime environments with different I/O models:
+
+1. **Async Path (MCP Server)** - `core/` modules
+   - Used by the MCP server for Claude Desktop, LibreChat, etc.
+   - Fully asynchronous for non-blocking I/O
+   - Uses `core.vector_db.VectorDB` and `core.query_engine.QueryEngine`
+
+2. **Sync Path (CLI/API)** - `storage/` and `query/` modules
+   - Used by the CLI, REST API, and batch processing
+   - Synchronous for simpler integration with existing tools
+   - Uses `storage.vector_db.VectorDB` and `query.query_engine.QueryEngine`
+
+Both paths share:
+- The same ChromaDB database storage
+- The same metadata extraction (`ingestion.metadata_extractor`)
+- The same configuration and data models
 
 ## Manual Setup Steps
 
