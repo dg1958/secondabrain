@@ -1,0 +1,47 @@
+# Memory Palace Default Configuration
+# Override by setting MEMORY_PALACE_CONFIG environment variable
+# or by placing a settings.yaml in the data directory
+
+storage:
+  # ChromaDB vector database path
+  chroma_path: "./data/chroma_db"
+  # SQLite metadata database path
+  sqlite_path: "./data/metadata.db"
+
+embeddings:
+  # Sentence transformer model for embeddings
+  # Alternatives: "BAAI/bge-small-en-v1.5", "all-mpnet-base-v2"
+  model: "all-MiniLM-L6-v2"
+
+extraction:
+  # spaCy model for NER
+  # Install with: python -m spacy download en_core_web_sm
+  spacy_model: "en_core_web_sm"
+  # Maximum topics to extract per memory
+  max_topics_per_memory: 5
+  # Minimum word length for topic extraction
+  min_topic_length: 3
+
+server:
+  stdio:
+    enabled: true
+  http:
+    enabled: true
+    host: "127.0.0.1"
+    port: 8765
+    # Enable CORS for web clients
+    cors_origins:
+      - "http://localhost:*"
+      - "http://127.0.0.1:*"
+
+search:
+  # Default number of results to return
+  default_limit: 10
+  # Maximum number of results allowed
+  max_limit: 100
+  # Default minimum relevance score (0-1)
+  default_min_relevance: 0.5
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
