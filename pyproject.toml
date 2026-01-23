@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "memory-palace"
+version = "0.1.0"
+description = "MCP Server for Memory Palace RAG System"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Memory Palace Team"}
+]
+keywords = ["mcp", "rag", "memory", "ai", "claude"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "mcp>=1.0.0",
+    "chromadb>=0.4.0",
+    "sentence-transformers>=2.2.0",
+    "spacy>=3.5.0",
+    "aiosqlite>=0.19.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "httpx>=0.24.0",
+    "sse-starlette>=1.6.0",
+    "python-dateutil>=2.8.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[project.scripts]
+memory-palace-stdio = "memory_palace.scripts.run_stdio:main"
+memory-palace-http = "memory_palace.scripts.run_http:main"
+memory-palace-setup = "memory_palace.scripts.setup_db:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["memory_palace*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

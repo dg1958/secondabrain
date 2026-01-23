@@ -2,16 +2,25 @@
 Configuration module for Memory Palace.
 
 This module handles loading and accessing configuration settings
-from YAML files and environment variables.
+from YAML files and environment variables. Supports both the original
+Settings class for backward compatibility and Pydantic-based settings
+for MCP server functionality.
 """
 
-import os
-from pathlib import Path
-from typing import Any, Dict, Optional
+# Import Pydantic-based settings for MCP server
+from memory_palace.config.settings import (
+    load_settings,
+    get_settings,
+    Settings as MCPSettings,
+    StorageSettings,
+    EmbeddingsSettings,
+    ExtractionSettings,
+    ServerSettings,
+    SearchSettings,
+    LoggingSettings,
+)
 
-import yaml
-from loguru import logger
-
+# Import data models/schemas for memory palace core
 from .schema import (
     Document,
     DocumentFormat,
@@ -27,20 +36,30 @@ from .schema import (
     SourceType,
 )
 
-class Settings:
+import os
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import yaml
+from loguru import logger
+
+
+class LegacySettings:
     """
-    Configuration manager for Memory Palace.
+    Legacy configuration manager for Memory Palace.
 
     Loads settings from YAML files with support for:
     - Default settings (settings.yaml)
     - Local overrides (settings.local.yaml)
     - Environment variable substitution
+
+    Note: For new code, prefer using `get_settings()` for Pydantic-based settings.
     """
 
-    _instance: Optional["Settings"] = None
+    _instance: Optional["LegacySettings"] = None
     _config: Dict[str, Any] = {}
 
-    def __new__(cls) -> "Settings":
+    def __new__(cls) -> "LegacySettings":
         """Singleton pattern to ensure one config instance."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -154,12 +173,28 @@ class Settings:
         return self.get("vector_db", "collection_name", default="memory_palace")
 
 
-# Global settings instance
-settings = Settings()
+# Global settings instances
+settings = LegacySettings()
+
+# Alias for backward compatibility
+Settings = LegacySettings
 
 __all__ = [
+    # New Pydantic-based settings (MCP server)
+    "load_settings",
+    "get_settings",
+    "MCPSettings",
+    "StorageSettings",
+    "EmbeddingsSettings",
+    "ExtractionSettings",
+    "ServerSettings",
+    "SearchSettings",
+    "LoggingSettings",
+    # Legacy settings
     "settings",
     "Settings",
+    "LegacySettings",
+    # Data models/schemas
     "Document",
     "DocumentFormat",
     "EntityType",
